@@ -1,0 +1,46 @@
+<div class="container-fluid">
+  <lib-header title="Attributes Mapping"></lib-header>
+  <form action="" [formGroup]="attributeForm">
+    <div class="form-row border-4 border-bottom border-light p-3 mb-2">
+      <div class="col-6 col-md-4">
+        <div class="d-flex justify-content-between">
+          <label>Attributes Types <span class="text-danger"> * </span></label>
+          <select name="attributetype" class="form-control" formControlName="AttributeType">
+            <option value="">--Select--</option>
+            <option *ngFor="let attribute of attributeTypes" [value]="attribute.AttributeTypeID">{{ attribute.AttributeType }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4 col-6">
+        <div class="d-flex px-2 justify-content-between">
+          <label>Apply To <span class="text-danger"> * </span></label>
+          <select name="applyto" class="form-control" formControlName="ApplyTo">
+            <option value="">--Select--</option>
+            <option *ngFor="let data of applyTo" [value]="data.ApplyToID">
+              {{ data.ApplyTo }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row p-3">
+      <div class="col-md-4 col-6">
+        <div class="d-flex px-2 justify-content-between">
+          <label>Mapped For</label>
+          <select
+            name="mappedfor"
+            class="form-control"
+            formControlName="MappedFor"
+          >
+            <option value="">--Select--</option>
+            <option value="color">Color</option>
+            <option value="size">Size</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row p-3"></div>
+  </form>
+</div>

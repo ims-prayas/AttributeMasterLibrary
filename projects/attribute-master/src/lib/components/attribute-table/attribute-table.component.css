@@ -1,0 +1,7 @@
+.edit-btn {
+  color: var(--edit-btn-color);
+}
+
+.delete-btn {
+  color: var(--delete-btn-color);
+}

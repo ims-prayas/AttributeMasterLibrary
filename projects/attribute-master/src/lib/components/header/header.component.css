@@ -1,0 +1,31 @@
+.header-container {
+  width: 251px;
+  height: 21px;
+  top: 16px;
+  left: 72px;
+}
+
+.header-title {
+  width: 251px;
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.btn-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 220px;
+}
+
+.button {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 100%;
+  width: 86px;
+  height: 30px;
+}
