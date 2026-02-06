@@ -1,0 +1,9 @@
+<div style="background-color: #ffff; border-radius: 2%; padding: 5%;">
+  <h2 mat-dialog-title>{{DialogObj.Title}}</h2>
+  <div mat-dialog-content>
+    <div [innerHTML]="DialogObj.Message"></div>
+  </div>
+  <div mat-dialog-actions class="justify-content-end">
+    <button mat-button mat-dialog-close color="primary">OK</button>
+  </div>
+</div>

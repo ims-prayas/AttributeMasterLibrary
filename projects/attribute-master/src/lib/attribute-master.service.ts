@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { ConfigService } from './config.service';
+import { DialogComponent } from './components/dialog/dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 export interface AttributeMaster {
   AttributeType: string;
@@ -74,6 +76,7 @@ export class AttributeMasterService {
   constructor(
     private http: HttpClient,
     private configService: ConfigService,
+    private dialog: MatDialog
   ) {}
 
   private get apiUrl(): string {
@@ -165,7 +168,8 @@ export class AttributeMasterService {
     if (row.UseAsBarcode) {
       const exists = this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (sn === undefined || r.ID !== sn));
       if (exists) {
-        throw new Error('Only one attribute can be marked as Barcode.');
+        this.openErrorDialog('Only one element can have barcode')
+        return;
       }
     }
 
@@ -186,11 +190,11 @@ export class AttributeMasterService {
     const otherRows = isEdit ? this.attributeMasterObj.AttributeDetails.filter(r => r.ID !== sn) : this.attributeMasterObj.AttributeDetails;
 
     if (otherRows.some(r => r.AttributeName.toLowerCase() === detail.AttributeName.toLowerCase())) {
-      throw new Error('Attribute Name already exists.');
+      this.openErrorDialog('Attribute Name already exists.');
     }
 
     if (otherRows.some(r => r.OrderNo === detail.OrderNo)) {
-      throw new Error('Serial Order No already exists.');
+      this.openErrorDialog('Serial Order No already exists.');
     }
 
 
@@ -199,7 +203,7 @@ export class AttributeMasterService {
       if (index !== -1) {
         this.attributeMasterObj.AttributeDetails[index] = { ...detail, ID: sn };
       } else {
-        throw new Error('Row not found for update');
+        this.openErrorDialog('Row not found for update');
       }
     } else {
       this.attributeMasterObj.AttributeDetails.push(detail);
@@ -214,5 +218,25 @@ export class AttributeMasterService {
 
   hasBarcodeAttribute(excludeId?: number): boolean {
     return this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (excludeId === undefined || r.ID !== excludeId));
+  }
+
+  openSuccessDialog(Message:string) {
+   return this.dialog.open(DialogComponent, {
+      minWidth:'25rem',
+      data:{
+        Title: "Information",
+        Message: Message
+      }
+    });
+  }
+
+  openErrorDialog(Message:string) {
+    this.dialog.open(DialogComponent, {
+      minWidth:'25rem',
+      data:{
+        Title: "Error",
+        Message: Message
+      }
+    });
   }
 }
