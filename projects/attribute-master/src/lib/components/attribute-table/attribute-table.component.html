@@ -12,9 +12,9 @@
       <tr *ngFor=" let data of tableData | paginate: { itemsPerPage: itemsPerPage, currentPage: page }; let i = index">
         <td>{{ i + 1 }}</td>
         <td>{{ data.OrderNo }}</td>
-        <td>{{ data.FieldName }}</td>
+        <td>{{ data.AttributeName }}</td>
         <td>{{ data.DataType }}</td>
-        <td>{{ data.ParentField }}</td>
+        <td>{{ data.ParentAttribute }}</td>
         <td>{{ data.ConstraintMode }}</td>
         <td>{{ data.IsRequired }}</td>
         <td>{{ data.UseAsBarcode }}</td>

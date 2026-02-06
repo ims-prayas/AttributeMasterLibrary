@@ -2,10 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import {
-  AttributeMasterService,
-  AttributeDetails,
-} from '../../attribute-master.service';
+import {  AttributeMasterService} from '../../attribute-master.service';
 
 @Component({
   selector: 'lib-attribute-form',
@@ -32,19 +29,64 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
     this.initForm();
     this.loadDropdowns();
 
+  this.attributeMasterService.tableData$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => {
+      // this.updateBarcodeAvailability();
+    });
+
+    // this.attributeMasterService.editData$
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe((data) => {
+    //     this.isEdit = true;
+    //     this.ID = data.ID!;
+    //     const masterData = this.attributeMasterService.attributeMasterObj;
+    //     this.attributeForm.patchValue({
+    //       ...data,
+    //       AttributeType: masterData.AttributeType,
+    //       ApplyTo: masterData.ApplyTo,
+    //       IsMappingRequired: masterData.IsMappingRequired,
+    //       MappedBy: masterData.MappedBy,
+    //     });
+    //     this.updateBarcodeAvailability();
+    //   });
+
     this.attributeMasterService.editData$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((data) => {
-        this.isEdit = true;
-        this.ID = data.ID!;
-        this.attributeForm.patchValue(data);
-      });
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((data) => {
+    this.isEdit = true;
+    this.ID = data.ID!;
+    const masterData = this.attributeMasterService.attributeMasterObj;
+
+    this.attributeForm.get('AttributeType')?.patchValue(masterData.AttributeType);
+
+    this.attributeMasterService.getApplyToList(masterData.AttributeType).subscribe((res: any) => {
+      if (res.status === 'ok') {
+        this.applyTo = res.result;
+        
+        this.attributeForm.patchValue({
+          ...data,
+          ApplyTo: masterData.ApplyTo,
+          IsMappingRequired: masterData.IsMappingRequired,
+          MappedBy: masterData.MappedBy,
+        }, { emitEvent: false });
+        
+        // this.updateBarcodeAvailability();
+      }
+    });
+  });
+
+      this.attributeMasterService.saveRequested$.pipe(takeUntil(this.destroy$))
+      .subscribe(()=>{
+        this.handleSave();
+      })
 
     this.attributeMasterService.resetForm$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.attributeForm.reset();
         this.isEdit = false;
+        // this.updateBarcodeAvailability();
       });
 
     this.attributeForm.get('IsMappingRequired')?.valueChanges.subscribe((v) => {
@@ -56,7 +98,7 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
       }
     });
     this.attributeForm.get('HasParent')?.valueChanges.subscribe((v) => {
-      const f = this.attributeForm.get('ParentField');
+      const f = this.attributeForm.get('ParentAttribute');
       v ? f?.enable() : f?.disable();
     });
     this.attributeForm
@@ -67,6 +109,9 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
       });
 
     this.attributeForm.get('AttributeType')?.valueChanges.subscribe((type) => {
+      if(!type) {
+        return;
+      }
       this.attributeMasterService.getApplyToList(type).subscribe((res: any) => {
         if (res.status === 'ok') {
           this.applyTo = res.result;
@@ -78,11 +123,18 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
       } else {
         this.attributeForm.get('IsMappingRequired')?.enable();
       }
+      if(type == 'Transaction'){  
+         this.attributeForm.get('ApplyTo')?.setValue(null);
+          this.attributeMasterService.loadMaster(type);
+      }
     });
 
     this.attributeForm.get('ApplyTo')?.valueChanges.subscribe((id) => {
       const attrType = this.attributeForm.get('AttributeType')?.value;
       if (attrType && id) {
+        if (this.attributeMasterService.attributeMasterObj.AttributeType === attrType && this.attributeMasterService.attributeMasterObj.ApplyTo === id) {
+          return;
+        }
         this.attributeMasterService.loadMaster(attrType, id);
       }
     });
@@ -96,16 +148,16 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
   initForm() {
     this.attributeForm = this.fb.group({
       AttributeType: ['', Validators.required],
-      ApplyTo: ['', Validators.required],
+      ApplyTo: [''],
       IsMappingRequired: [false],
       MappedBy: [{ value: '', disabled: true }, Validators.required],
-      FieldName: ['', Validators.required],
+      AttributeName: ['', Validators.required],
       DataType: ['', Validators.required],
       OrderNo: ['', Validators.required],
       Regex: [''],
       HasParent: [false],
       CheckUniqueConstraint: [false],
-      ParentField: [{ value: '', disabled: true }, Validators.required],
+      ParentAttribute: [{ value: '', disabled: true }, Validators.required],
       ConstraintMode: [{ value: '', disabled: true }, Validators.required],
       IsRequired: [0],
       UseAsBarcode: [false],
@@ -124,9 +176,9 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSubmit() {
+  handleAddEditRow() {
     if (!this.attributeForm.valid) {
-      alert('Please fill all required fields');
+      this.attributeMasterService.openErrorDialog('Please fill all required fields');
       return;
     }
 
@@ -153,5 +205,41 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
     } catch (err: any) {
       alert(err.message);
     }
+  }
+
+
+  updateBarcodeAvailability(): void {
+    const control = this.attributeForm.get('UseAsBarcode');
+    if (!control) {
+      return;
+    }
+    const barcodeExists = this.attributeMasterService.hasBarcodeAttribute(this.isEdit ? this.ID : undefined);
+
+    if (barcodeExists) {
+      control.setValue(false, { emitEvent: false });
+      control.disable({ emitEvent: false });
+    } else {
+      control.enable({ emitEvent: false });
+    }
+  }
+
+  handleSave(){    
+    if (this.attributeForm.invalid && this.attributeMasterService.attributeMasterObj.AttributeDetails.length === 0) {
+      this.attributeMasterService.openErrorDialog('Please fill required fields');
+      return;
+    }
+
+    this.attributeMasterService.saveMaster().subscribe({
+      next: (res: any) => {
+        if (res.status === 'ok') {
+          this.attributeMasterService.resetForm();
+          this.attributeMasterService.clearTable()
+          this.attributeMasterService.openSuccessDialog(res.result);
+        } else {
+          alert(res.message || 'Save failed');
+        }
+      },
+      error: () => alert('Network error while saving Master')
+    });
   }
 }

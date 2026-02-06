@@ -5,16 +5,16 @@
       <div class="col-6 col-md-4">
         <div class="d-flex justify-content-between">
           <label>Attributes Types <span class="text-danger"> * </span></label>
-          <select name="attributetype" class="form-control" formControlName="AttributeType">
+          <select name="attributetype" class="form-control ml-3" formControlName="AttributeType">
             <option value="">--Select--</option>
             <option *ngFor="let attribute of attributeTypes" [value]="attribute.AttributeTypeID">{{ attribute.AttributeType }}</option>
           </select>
         </div>
       </div>
-      <div class="col-md-4 col-6">
-        <div class="d-flex px-2 justify-content-between">
+      <div class="col-md-4 col-6 ml-4" *ngIf="attributeForm.get('AttributeType')?.value !== 'Transaction'">
+        <div class="d-flex justify-content-between">
           <label>Apply To <span class="text-danger"> * </span></label>
-          <select name="applyto" class="form-control" formControlName="ApplyTo">
+          <select name="applyto" class="form-control ml-3" formControlName="ApplyTo">
             <option value="">--Select--</option>
             <option *ngFor="let data of applyTo" [value]="data.ApplyToID">
               {{ data.ApplyTo }}
@@ -26,21 +26,43 @@
 
     <div class="form-row p-3">
       <div class="col-md-4 col-6">
-        <div class="d-flex px-2 justify-content-between">
-          <label>Mapped For</label>
-          <select
-            name="mappedfor"
-            class="form-control"
-            formControlName="MappedFor"
-          >
+        <div class="d-flex justify-content-between">
+          <label>Mapped For <span class="text-danger"> * </span></label>
+          <select name="mappedfor" class="form-control ml-3" formControlName="MappedFor">
             <option value="">--Select--</option>
-            <option value="color">Color</option>
-            <option value="size">Size</option>
+            <option [value]="item.ID" *ngFor="let item of mappedForList">{{item.MappedFor}}</option>
           </select>
         </div>
       </div>
     </div>
 
-    <div class="form-row p-3"></div>
+
+    <!-- Attribute list -->
+    <div class="container-fluid mt-4">
+      <div class="row align-items-center">
+        <div class="col-md-3" *ngIf="attributesList.length">
+          <h6 class="mb-2 font-weight-bold">Attribute Master List</h6>
+          <div class="card-box border border-3 p-3">
+            <div class="form-check" *ngFor="let item of attributesList; let i = index">
+              <input class="form-check-input" type="checkbox" [checked]="item.IsMapped"
+                  (change)="toggleCheck(item, $event)"
+                  [value]="item.AttributeListID"> 
+              <label class="form-check-label ml-2">{{item.AttributeName}}</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3" *ngIf="mappedAttributesList.length">
+          <h6 class="mb-2 font-weight-bold">Mapped Attribute List</h6>
+          <div class="card-box p-3 border border-3">
+            <div class="d-flex justify-content-between mb-1" *ngFor="let item of mappedAttributesList">
+              <span>{{item.AttributeName}}</span>
+              <i class="bi bi-trash3 delete-btn text-danger" role="button" (click)="deleteItem(item)"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </form>
 </div>

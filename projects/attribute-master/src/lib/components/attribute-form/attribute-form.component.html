@@ -1,6 +1,6 @@
 <div class="container-fluid">
   <lib-header title="Attributes Master"></lib-header>
-  <form action="" [formGroup]="attributeForm" (ngSubmit)="onSubmit()">
+  <form action="" [formGroup]="attributeForm">
     <!-- Top Row -->
     <div class="form-row border-4 border-bottom border-light p-3 mb-2">
       <div class="col-6 col-md-3">
@@ -8,7 +8,7 @@
           <label>Attributes Types <span class="text-danger"> * </span></label>
           <select
             name="attributetype"
-            class="form-control"
+            class="form-control ml-3"
             formControlName="AttributeType"
           >
             <option value="">--Select--</option>
@@ -16,10 +16,10 @@
           </select>
         </div>
       </div>
-      <div class="col-md-3 col-6">
-        <div class="d-flex px-2 justify-content-between">
+      <div class="col-md-3 col-6" *ngIf="attributeForm.get('AttributeType')?.value != 'Transaction'">
+        <div class="d-flex ml-3 justify-content-between">
           <label>Apply To <span class="text-danger"> * </span></label>
-          <select name="applyto" class="form-control" formControlName="ApplyTo">
+          <select name="applyto" class="form-control ml-3" formControlName="ApplyTo">
             <option value="">--Select--</option>
             <option *ngFor="let data of applyTo" [value]="data.ApplyToID">
               {{ data.ApplyTo }}
@@ -28,7 +28,7 @@
         </div>
       </div>
       <div class="col-md-3 col-6">
-        <div class="d-flex px-2 align-items-center h-100">
+        <div class="d-flex ml-4 align-items-center">
           <div class="custom-control custom-checkbox">
             <input
               type="checkbox"
@@ -43,11 +43,11 @@
         </div>
       </div>
       <div class="col-md-3 col-6">
-        <div class="d-flex px-2 justify-content-between">
+        <div class="d-flex justify-content-between">
           <span>Attributes Mapped by</span>
-          <select name="" id="" class="form-control" formControlName="MappedBy">
+          <select name="" id="" class="form-control ml-3" formControlName="MappedBy">
             <option value="">--Select--</option>
-            <option [value]="mappedBy.MappingID" *ngFor="let mappedBy of attributesMappedBy">{{ mappedBy.MappedBy }}</option>
+            <option [value]="mappedBy.MappedByID" *ngFor="let mappedBy of attributesMappedBy">{{ mappedBy.MappedBy }}</option>
           </select>
         </div>
       </div>
@@ -56,15 +56,15 @@
     <!-- Second Row -->
     <div class="form-row p-2">
       <div class="col-md-3 col-6">
-        <div class="d-flex px-2 justify-content-between">
+        <div class="d-flex justify-content-between">
           <label for="">Attribute Name <span class="text-danger"> * </span></label >
-          <input type="text" class="form-control" formControlName="FieldName" />
+          <input type="text" class="form-control ml-3" formControlName="AttributeName" />
         </div>
       </div>
       <div class="col-6 col-md-3">
-        <div class="d-flex px-2 justify-content-between">
+        <div class="d-flex ml-3 justify-content-between">
           <label for="">Input Type <span class="text-danger"> * </span></label>
-          <select name="" id="" class="form-control" formControlName="DataType">
+          <select name="" id="" class="form-control ml-3" formControlName="DataType">
             <option value="">--Select--</option>
             <option value="number">Number</option>
             <option value="text">Text</option>
@@ -73,21 +73,23 @@
         </div>
       </div>
       <div class="col-6 col-md-3">
-        <div class="d-flex px-2 justify-content-evenly">
+        <div class="d-flex ml-3 justify-content-between">
           <label for="orderno">Serial Order No <span class="text-danger"> * </span></label>
           <input
             type="number"
-            class="form-control"
+            class="form-control ml-2"
             formControlName="OrderNo"
             id="orderno"
-            oninput="this.value = this.value.replace(/\D/g, '')"
+            oninput="this.value = this.value.replace(/\D/g, ''); if(this.value > 1000) this.value = 1000;"
+            min="1"
+            max="1000"
           />
         </div>
       </div>
       <div class="col-6 col-md-3">
-        <div class="d-flex px-2 justify-content-between">
+        <div class="d-flex ml-3 justify-content-between">
           <label for="regex">Regex Format</label>
-          <input type="text" class="form-control" formControlName="Regex" id="regex"/>
+          <input type="text" class="form-control ml-3" formControlName="Regex" id="regex"/>
         </div>
       </div>
     </div>
@@ -95,7 +97,7 @@
     <!-- Third Row -->
     <div class="form-row p-3 border-bottom border-3 border-light align-items-center">
       <div class="col-6 col-md-3">
-        <div class="d-flex justify-content-start">
+        <div class="d-flex justify-content-start ml-3">
           <span class="col-2"></span>
           <div class="custom-control custom-checkbox">
             <input
@@ -105,23 +107,23 @@
               class="custom-control-input"
               formControlName="HasParent"
             />
-            <label for="parentattributes" class="custom-control-label">Has Parent Attribbutes</label>
+            <label for="parentattributes" class="custom-control-label ml-3">Has Parent Attribbutes</label>
           </div>
         </div>
       </div>
 
       <div class="col-6 col-md-3">
-        <div class="d-flex px-2 justify-content-start">
+        <div class="d-flex ml-3 justify-content-start">
           <span class="col-2"></span>
           <div class="custom-control custom-checkbox">
             <input
               type="checkbox"
               name=""
               id="uniqueconstraint"
-              class="custom-control-input"
+              class="custom-control-input ml-3"
               formControlName="CheckUniqueConstraint"
             />
-            <label for="uniqueconstraint" class="custom-control-label">Check Unique Constraint</label>
+            <label for="uniqueconstraint" class="custom-control-label ml-3">Check Unique Constraint</label>
           </div>
         </div>
       </div>
@@ -129,63 +131,58 @@
       <div class="col-3"></div>
     </div>
 
-    <div class="form-row p-2 border-3 border-bottom border-light align-items-center">
+    <div class="form-row  border-3 border-bottom border-light align-items-center">
       <div class="col-6 col-md-3">
-        <div class="d-flex px-2 align-items-center">
+        <div class="d-flex ml-2 align-items-center">
           <label for="">Parent Attributes</label>
-          <select
-            name=""
-            id=""
-            class="form-control"
-            formControlName="ParentField"
-          >
+          <select name="" id="" class="form-control ml-3" formControlName="ParentAttribute" >
             <option value="">--Select Parent Attributes--</option>
-            <option *ngFor="let attribute of parentAttributes"[value]="attribute.FieldName">{{ attribute.FieldName }}</option>
+            <option *ngFor="let attribute of parentAttributes"[value]="attribute.ID">{{ attribute.AttributeName }}</option>
           </select>
         </div>
       </div>
 
       <div class="col-6 col-md-3">
-        <div class="d-flex justify-content-between">
+        <div class="d-flex ml-3 justify-content-between">
           <span class="col-2"></span>
-          <select name="" id="" class="form-control" formControlName="ConstraintMode">
+          <select name="" id="" class="form-control ml-3" formControlName="ConstraintMode">
             <option value="">--Select Constraint Mode--</option>
-            <option value="itemwise">Unique per Item</option>
-            <option value="global">Global Unique</option>
+            <option value="1">Unique per Item</option>
+            <option value="2">Global Unique</option>
           </select>
         </div>
       </div>
 
       <div class="col-6 col-md-3">
-        <div class="d-flex px-2 align-items-center h-100">
+        <div class="d-flex ml-3 align-items-center">
           <div class="custom-control custom-checkbox">
             <input
               type="checkbox"
               name=""
               id="mandatoryInput"
-              class="custom-control-input"
+              class="custom-control-input ml-3"
               formControlName="IsRequired"
             />
-            <label for="mandatoryInput" class="custom-control-label">Is Mandatory Input</label >
+            <label for="mandatoryInput" class="custom-control-label ml-3">Is Mandatory Input</label >
           </div>
         </div>
       </div>
 
       <div class="col-6 col-md-3">
-        <div class="d-flex justify-content-between px-2">
+        <div class="d-flex justify-content-between">
           <div class="d-flex custom-control custom-checkbox justify-content-between align-items-center" >
             <input
               type="checkbox"
               name=""
               id="useAsBarcode"
-              class="custom-control-input"
+              class="custom-control-input ml-3"
               formControlName="UseAsBarcode"
             />
-            <label for="useAsBarcode" class="custom-control-label">Use as Barcode</label>
+            <label for="useAsBarcode" class="custom-control-label ml-3">Use as Barcode</label>
           </div>
 
           <div>
-            <button class="btn button" type="submit">{{ isEdit ? "Update" : "Add" }}</button>
+            <button class="btn button mr-3" type="submit" (click)="handleAddEditRow()" [disabled]="attributeForm.invalid">{{ isEdit ? "Update" : "Add" }}</button>
           </div>
         </div>
       </div>
