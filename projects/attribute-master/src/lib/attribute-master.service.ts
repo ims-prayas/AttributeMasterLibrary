@@ -216,6 +216,19 @@ export class AttributeMasterService {
     this.tableDataSubject.next([]);
   }
 
+  getAttributeNames(attributeType: string, applyTo: string) {
+    return this.http.get<any>(`${this.apiUrl}/getListOnlyAttributeNames?attributeType=${attributeType}&applyTo=${applyTo}`);
+  }
+
+   getParentAttributeInfo(id: number) {
+    return this.http.get<any>(`${this.apiUrl}/getParentAttributeInfo?attributeListID=${id}`);
+  }
+
+  getAttributeValueList(attributeType: string, applyTo: string){
+    return this.http.get<any>(`${this.apiUrl}/getAttributeValues?attributeType=${attributeType}&applyTo=${applyTo}`);
+  }
+
+
   hasBarcodeAttribute(excludeId?: number): boolean {
     return this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (excludeId === undefined || r.ID !== excludeId));
   }

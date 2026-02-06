@@ -13,6 +13,7 @@ import { AttributeTableComponent } from './components/attribute-table/attribute-
 import { HeaderComponent } from './components/header/header.component';
 import { JwtInterceptor } from './jwt.interceptor';
 import { DialogComponent } from './components/dialog/dialog.component';
+import { AttributeValueMasterComponent } from './components/attribute-value-master/attribute-value-master.component';
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import { DialogComponent } from './components/dialog/dialog.component';
     AttributeTableComponent,
     AttributeMappingComponent,
     DialogComponent,
+    AttributeValueMasterComponent,
   ],
   imports: [
     ReactiveFormsModule,
