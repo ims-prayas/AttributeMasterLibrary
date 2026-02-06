@@ -5,7 +5,7 @@ import { ConfigService } from './config.service';
 
 export interface AttributeMaster {
   AttributeType: string;
-  ApplyTo: string;
+  ApplyTo?: string;
   IsMappingRequired: boolean;
   MappedBy: string;
   AttributeDetails: AttributeDetails[];
@@ -13,16 +13,27 @@ export interface AttributeMaster {
 
 export interface AttributeDetails {
   ID?: number;
-  FieldName: string;
+  AttributeName: string;
   DataType: string;
   OrderNo: string;
   Regex: string;
   HasParent: boolean;
-  ParentField: string;
+  ParentAttribute: string;
   CheckUniqueConstraint: boolean;
   ConstraintMode: string;
   IsRequired: number;
   UseAsBarcode: boolean;
+}
+
+export interface AttributeMapping{
+  AttributeType : string;
+  ApplyTo: string;
+  MappedFor: string;
+  AttributesList: MappingDetails[]
+}
+
+export interface MappingDetails{
+  AttributeListID: number;
 }
 
 @Injectable({
@@ -37,6 +48,13 @@ export class AttributeMasterService {
     AttributeDetails: [],
   };
 
+  mappingMasterObj : AttributeMapping ={
+    AttributeType: '',
+    ApplyTo: '',
+    MappedFor: '',
+    AttributesList: []
+  }
+
   private tableDataSubject = new BehaviorSubject<AttributeDetails[]>([]);
   tableData$ = this.tableDataSubject.asObservable();
 
@@ -44,6 +62,14 @@ export class AttributeMasterService {
   editData$ = this.editDataSubject.asObservable();
   private resetFormSubject = new Subject<void>();
   resetForm$ = this.resetFormSubject.asObservable();
+
+  private saveRequestedSubject = new Subject<void>();
+  saveRequested$ = this.saveRequestedSubject.asObservable();
+
+  requestSave() {
+    this.saveRequestedSubject.next();
+  }
+
 
   constructor(
     private http: HttpClient,
@@ -58,32 +84,15 @@ export class AttributeMasterService {
     this.tableDataSubject.next([...this.attributeMasterObj.AttributeDetails]);
   }
 
-  // addAttribute(detail: AttributeDetails) {
-  //   const exists = this.attributeMasterObj.AttributeDetails.some(
-  //     (d) => d.OrderNo === detail.OrderNo,
-  //   );
-  //   if (exists) throw new Error('Order No must be unique');
 
-  //   detail.ID = this.attributeMasterObj.AttributeDetails.length + 1;
-  //   this.attributeMasterObj.AttributeDetails.push(detail);
-  //   this.syncTable();
-  // }
-
-  updateAttribute(detail: AttributeDetails) {
-    const index = this.attributeMasterObj.AttributeDetails.findIndex((d) => d.ID === detail.ID,);
-    if (index === -1) {
-      throw new Error('Attribute not found');
-    }
-    this.attributeMasterObj.AttributeDetails[index] = detail;
-    this.syncTable();
-  }
 
   deleteAttribute(id: number) {
     this.http
       .post(`${this.apiUrl}/deleteAttributeDetail?ID=${id}`, {})
       .subscribe((res: any) => {
         if(res.status == 'ok'){
-          this.attributeMasterObj.AttributeDetails = this.attributeMasterObj.AttributeDetails.filter((d) => d.ID !== id,).map((d, i) => ({ ...d, sn: i + 1 }));
+          this.attributeMasterObj.AttributeDetails = this.attributeMasterObj.AttributeDetails.filter((d) => d.ID !== id)
+          .map((d, i) => ({ ...d, sn: i + 1 }));
           this.syncTable();          
         }
       });
@@ -109,11 +118,15 @@ export class AttributeMasterService {
     return this.http.get(`${this.apiUrl}/getMappedByList`);
   }
 
-  getAttributeDetails(attributeType: string, applyTo: string) {
+  getAttributeDetails(attributeType: string, applyTo?: string) {
     return this.http.get<any>(`${this.apiUrl}/getAttributeDetails?attributeType=${attributeType}&applyTo=${applyTo}`);
   }
 
-  loadMaster(attributeType: string, applyTo: string) {
+  getAttributesForMapping(attributeType: string, applyTo?: string, mappedFor?: string){
+    return this.http.get(`${this.apiUrl}/getAttributesForMapping?attributeType=${attributeType}&applyTo=${applyTo}&mappedFor=${mappedFor}`);
+  }
+
+  loadMaster(attributeType: string, applyTo?: string) {
     return this.getAttributeDetails(attributeType, applyTo).subscribe((res) => {
       if (res.status === 'ok') {
         this.attributeMasterObj = {
@@ -129,30 +142,15 @@ export class AttributeMasterService {
   }
 
   saveMaster() {
-    if (!this.attributeMasterObj.AttributeDetails.length) {
-      throw new Error('No attributes to save');
-    }
     const body = { data: this.attributeMasterObj };
     return this.http.post(`${this.apiUrl}/SaveAttributeMaster`, body);
   }
 
-  // saveAllAttributes() {
-  //   const master = this.attributeMasterObj;
+  saveAttributeMapping(){
+    const body = { data: this.mappingMasterObj }
+    return this.http.post(`${this.apiUrl}/saveAttributesMapping`, body)
+  }
 
-  //   if (!master.AttributeDetails || master.AttributeDetails.length === 0) {
-  //     throw new Error('No attribute data to save');
-  //   }
-
-  //   master.AttributeDetails = master.AttributeDetails.map((row) => ({
-  //     ...row,
-  //     AttributeType: master.AttributeType,
-  //     ApplyTo: master.ApplyTo,
-  //     IsMappingRequired: master.IsMappingRequired,
-  //     MappedBy: master.MappedBy,
-  //   }));
-
-  //   return this.http.post(`${this.apiUrl}/SaveAttributeMaster`, master);
-  // }
 
   addOrUpdateRow(row: any, isEdit = false, sn?: number) {
     this.attributeMasterObj.AttributeType = row.AttributeType;
@@ -164,16 +162,47 @@ export class AttributeMasterService {
       this.attributeMasterObj.AttributeDetails = [];
     }
 
+    if (row.UseAsBarcode) {
+      const exists = this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (sn === undefined || r.ID !== sn));
+      if (exists) {
+        throw new Error('Only one attribute can be marked as Barcode.');
+      }
+    }
+
+
+    const detail: AttributeDetails = {
+      AttributeName: row.AttributeName,
+      DataType: row.DataType,
+      OrderNo: row.OrderNo,
+      Regex: row.Regex,
+      HasParent: row.HasParent,
+      ParentAttribute: row.ParentAttribute,
+      CheckUniqueConstraint: row.CheckUniqueConstraint,
+      ConstraintMode: row.ConstraintMode,
+      IsRequired: row.IsRequired,
+      UseAsBarcode: row.UseAsBarcode,
+    };
+
+    const otherRows = isEdit ? this.attributeMasterObj.AttributeDetails.filter(r => r.ID !== sn) : this.attributeMasterObj.AttributeDetails;
+
+    if (otherRows.some(r => r.AttributeName.toLowerCase() === detail.AttributeName.toLowerCase())) {
+      throw new Error('Attribute Name already exists.');
+    }
+
+    if (otherRows.some(r => r.OrderNo === detail.OrderNo)) {
+      throw new Error('Serial Order No already exists.');
+    }
+
+
     if (isEdit) {
       const index = this.attributeMasterObj.AttributeDetails.findIndex((r) => r.ID === sn);
       if (index !== -1) {
-        this.attributeMasterObj.AttributeDetails[index] = { ...row, ID: sn };
+        this.attributeMasterObj.AttributeDetails[index] = { ...detail, ID: sn };
       } else {
         throw new Error('Row not found for update');
       }
     } else {
-      row.sn = this.attributeMasterObj.AttributeDetails.length + 1;
-      this.attributeMasterObj.AttributeDetails.push(row);
+      this.attributeMasterObj.AttributeDetails.push(detail);
     }
     this.tableDataSubject.next([...this.attributeMasterObj.AttributeDetails]);
   }
@@ -181,5 +210,9 @@ export class AttributeMasterService {
   clearTable() {
     this.attributeMasterObj.AttributeDetails = [];
     this.tableDataSubject.next([]);
+  }
+
+  hasBarcodeAttribute(excludeId?: number): boolean {
+    return this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (excludeId === undefined || r.ID !== excludeId));
   }
 }
