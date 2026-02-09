@@ -1,6 +1,6 @@
 <div class="container-fluid">
   <lib-header title="Attributes Master"></lib-header>
-  <form action="" [formGroup]="attributeForm">
+  <form action="" [formGroup]="attributeForm" class="mb-3">
     <!-- Top Row -->
     <div class="form-row border-4 border-bottom border-light p-3 mb-2">
       <div class="col-6 col-md-3">
@@ -16,7 +16,7 @@
           </select>
         </div>
       </div>
-      <div class="col-md-3 col-6" *ngIf="attributeForm.get('AttributeType')?.value != 'Transaction'">
+      <div class="col-md-3 col-6">
         <div class="d-flex ml-3 justify-content-between">
           <label>Apply To <span class="text-danger"> * </span></label>
           <select name="applyto" class="form-control ml-3" formControlName="ApplyTo">
@@ -168,7 +168,7 @@
         </div>
       </div>
 
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-3 p-3">
         <div class="d-flex justify-content-between">
           <div class="d-flex custom-control custom-checkbox justify-content-between align-items-center" >
             <input
@@ -182,14 +182,14 @@
           </div>
 
           <div>
-            <button class="btn button mr-3" type="submit" (click)="handleAddEditRow()" [disabled]="attributeForm.invalid">{{ isEdit ? "Update" : "Add" }}</button>
+            <button class="btn button mr-3" type="submit" (click)="handleAddEditRow()">{{ isEdit ? "Update" : "Add" }}</button>
           </div>
         </div>
       </div>
     </div>
   </form>
 
-  <ng-container *ngIf="attributeMasterService.attributeMasterObj.AttributeDetails.length > 0">
+  <ng-container>
     <lib-attribute-table></lib-attribute-table>
   </ng-container>
 </div>
