@@ -125,8 +125,8 @@ export class AttributeMasterService {
     return this.http.get(`${this.apiUrl}/getApplyToList?attributeType=${attributeTypeID}`);
   }
 
-  getParentAttributes() {
-    return this.http.get(`${this.apiUrl}/getParentAttributes`);
+  getParentAttributes(type:string, applyTo: string) {
+    return this.http.get(`${this.apiUrl}/getParentAttributes?attributeType=${type}&applyTo=${applyTo}`);
   }
 
   getMappedBy() {

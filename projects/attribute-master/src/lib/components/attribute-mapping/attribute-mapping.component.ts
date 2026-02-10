@@ -37,33 +37,43 @@ this.attributeMasterService.saveRequested$
     this.attributeForm.get('AttributeType')?.valueChanges.subscribe((type) => {
       if(type == 'Transaction'){
         this.attributeForm.get('ApplyTo')?.setValue(null)
-          this.attributeMasterService.getAttributesForMapping(type).subscribe((res: any) =>{
+        this.attributeMasterService.getAttributesForMapping(type).subscribe({
+          next: (res: any)=>{
             if(res.status == 'ok'){
               this.attributesList = res.result.length > 0? res.result  : [];
               this.mappedForList = res.result2.length > 0 ? res.result2 : []
               this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
               this.syncData();
             }
-        });
+          },
+          error: ()=> this.attributeMasterService.openErrorDialog('Failed to fetch apply to list')
+        })
       }
-      this.attributeMasterService.getApplyToList(type).subscribe((res: any) => {
-        if (res.status === 'ok') {
-          this.applyTo = res.result;
-        }
-      });
+
+      this.attributeMasterService.getApplyToList(type).subscribe({
+        next: (res: any)=>{
+          if (res.status === 'ok') {
+            this.applyTo = res.result;
+          }  
+        }, 
+        error: ()=> this.attributeMasterService.openErrorDialog('Failed to fetch apply to list')
+      })
     });
 
     this.attributeForm.get('ApplyTo')?.valueChanges.subscribe((id) => {
       const attrType = this.attributeForm.get('AttributeType')?.value;
       if (attrType && id) {
-        this.attributeMasterService.getAttributesForMapping(attrType, id).subscribe((res: any) =>{
-          if(res.status == 'ok'){
-            this.attributesList = res.result.length > 0? res.result  : [];
-            this.mappedForList = res.result2.length > 0 ? res.result2 : []
+      this.attributeMasterService.getAttributesForMapping(attrType, id).subscribe({
+        next: (res: any)=>{
+         if (res.status === 'ok') {
+            this.attributesList = res.result || [];
             this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
-            this.syncData();
-          }
-        });
+            this.mappedForList = res.result2.length > 0 ? res.result2 : [];
+            this.syncData(); 
+          } 
+        },
+        error: ()=> this.attributeMasterService.openErrorDialog('Attributes master is not configured')
+      })
       }
     });
 
@@ -74,29 +84,34 @@ this.attributeMasterService.saveRequested$
         const applyTo = this.attributeForm.get('ApplyTo')?.value;
 
         if(attrType == 'Transaction'){
-            this.attributeMasterService .getAttributesForMapping(attrType,  applyTo, mappedFor)
-            .subscribe((res: any) => {
+          this.attributeMasterService.getAttributesForMapping(attrType, applyTo, mappedFor)
+          .subscribe({
+            next: (res: any)=>{
               if (res.status === 'ok') {
               this.attributesList = res.result || [];
               this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
               this.syncData(); 
             }
-          });
+          },
+            error: ()=> this.attributeMasterService.openErrorDialog('Failed to load mapped attributes')
+          })
         }
 
         if (!attrType || !applyTo || !mappedFor) {
           return;
         }
-        
-        this.attributeMasterService .getAttributesForMapping(attrType, applyTo, mappedFor)
-        .subscribe((res: any) => {
-          if (res.status === 'ok') {
+
+      this.attributeMasterService.getAttributesForMapping(attrType, applyTo, mappedFor).subscribe({
+        next: (res: any)=>{
+         if (res.status === 'ok') {
             this.attributesList = res.result || [];
             this.mappedAttributesList =
             this.attributesList.filter((item: any) => item.IsMapped);
             this.syncData(); 
-        }
-      });
+          } 
+        },
+        error: ()=> this.attributeMasterService.openErrorDialog('Falied to load mappings')
+      })
     });
 
     
@@ -122,17 +137,26 @@ this.attributeMasterService.saveRequested$
     });
   }
 
-  loadDropdowns() {
-    this.attributeMasterService.getAttributeTypes().subscribe((res: any) => {
-      if (res.status === 'ok') {
-        this.attributeTypes = res.result;
+  loadDropdowns(){
+    this.attributeMasterService.getAttributeTypes().subscribe({
+     next: (res: any)  =>{
+      if(res.status == 'ok'){
+        this.attributeTypes = res.result
+      }else{
+        this.attributeMasterService.openErrorDialog(res.result)
       }
+     },
+     error: ()=> this.attributeMasterService.openErrorDialog('Failed to load mappings')
     });
   }
 
   deleteItem(item: any): void {
-    this.mappedAttributesList = this.mappedAttributesList.filter((mapped: any) => mapped.AttributeListID !== item.AttributeListID);
     const found = this.attributesList.find((x: any) => x.AttributeListID == item.AttributeListID);
+    if(found && found.IsParentForMappedAttributes){
+      this.attributeMasterService.openErrorDialog('Selected atttribute is parent for other mapped attributes')
+      return;
+    }
+    this.mappedAttributesList = this.mappedAttributesList.filter((mapped: any) => mapped.AttributeListID !== item.AttributeListID);
     if (found) {
       found.IsMapped = false;
     }
@@ -152,52 +176,62 @@ this.attributeMasterService.saveRequested$
   }
 
   handleSave() {
-    if (!this.attributeForm.valid) {
-      this.attributeForm.markAllAsTouched();
-      alert('Please fill all required fields');
-      return;
+      if (!this.attributeForm.valid) {
+        this.attributeForm.markAllAsTouched();
+        this.attributeMasterService.openErrorDialog('Please fill all required fields');
+        return;
+      }
+      if (this.attributeForm.valid && this.mappedAttributesList.length > 0) {
+      this.attributeMasterService.saveAttributeMapping().subscribe({
+        next: (res: any) => {
+          if (res.status === 'ok') {
+            this.attributeMasterService.resetForm();
+            this.attributeMasterService.clearTable();
+            this.attributeMasterService.openSuccessDialog(res.result);
+          }
+        },
+        error: (err) => this.attributeMasterService.openErrorDialog('Failed to save mapping')
+      });
     }
-    if (this.attributeForm.valid && this.mappedAttributesList.length > 0) {
-    this.attributeMasterService.saveAttributeMapping().subscribe({
-      next: (res: any) => {
-        if (res.status === 'ok') {
-          this.attributeMasterService.resetForm();
-          this.attributeMasterService.clearTable();
-          alert(res.result);
-        }
-      },
-      error: (err) => alert('Mapping Save Error: ' + err.message)
-    });
-  }
   }
 
   toggleCheck(item: any, event: Event): void {
-  const checked = (event.target as HTMLInputElement).checked;
+  const checkbox = event.target as HTMLInputElement;
+  const checked = checkbox.checked;
 
   if (checked) {
-    item.IsMapped = true;
-    this.selectedAttributeIds.add(item.AttributeListID);
-    const selectedItems = this.attributesList.filter(item =>this.selectedAttributeIds.has(item.AttributeListID));
+    if (item.IsParentAttributeMapped) {
+      checkbox.checked = false;
+      item.IsMapped = false;
+      this.attributeMasterService.openErrorDialog('Parent atttribute of selected attribute is already mapped.');
+      return; 
+    }
 
-    selectedItems.forEach((item: any) => {
-    const exists = this.mappedAttributesList.some((mapped: any) => mapped.AttributeListID === item.AttributeListID);
+    item.IsMapped = true;
+    
+    const exists = this.mappedAttributesList.find(m => m.AttributeListID === item.AttributeListID);
     if (!exists) {
       this.mappedAttributesList.push(item);
     }
-  });
 
-  this.selectedAttributeIds.clear();
   } else {
-    this.selectedAttributeIds.delete(item.AttributeListID);
+    if (item.IsParentForMappedAttributes) {
+      this.attributeMasterService.openErrorDialog('Selected attribute is parent for other mapped attributes');
+      checkbox.checked = true;
+      item.IsMapped = true;
+      return;
+    }
+    
     this.deleteItem(item);
   }
+  
   this.syncData();
-  }
+}
 
   handleMappingSave() {
     if (this.attributeForm.invalid) {
       this.attributeForm.markAllAsTouched();
-      alert('Please complete the mapping requirements.');
+      this.attributeMasterService.openErrorDialog('Please complete the mapping requirements.');
       return;
     }
 
@@ -206,13 +240,13 @@ this.attributeMasterService.saveRequested$
     this.attributeMasterService.saveAttributeMapping().subscribe({
       next: (res: any) => {
         if (res.status === 'ok') {
-          alert('Attribute Mapping Saved Successfully');
+          this.attributeMasterService.openSuccessDialog('Attribute Mapping Saved Successfully');
           this.attributeMasterService.resetForm();
         } else {
-          alert(res.message || 'Mapping failed');
+          this.attributeMasterService.openErrorDialog(res.message || 'Mapping failed');
         }
       },
-      error: () => alert('Network error while saving Mapping')
+      error: () => this.attributeMasterService.openSuccessDialog('Network error while saving Mapping')
     });
   }
 }

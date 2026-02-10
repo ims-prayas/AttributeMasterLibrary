@@ -11,7 +11,7 @@ import {  AttributeMasterService, AttributeDetails} from '../../attribute-master
 })
 export class AttributeFormComponent implements OnInit, OnDestroy {
   attributeForm!: FormGroup;
-  isEdit: boolean = false;
+  isEdit: boolean = false;  
   ID!: number;
 
   private destroy$ = new Subject<void>();
@@ -97,7 +97,9 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
       if(!type) {
         return;
       }
-      this.attributeMasterService.clearTable();
+      if(!this.isEdit){
+        this.attributeMasterService.clearTable();
+      }
 
       this.attributeMasterService.getApplyToList(type).subscribe({
         next: (res: any) =>{
@@ -125,6 +127,15 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
       const attrType = this.attributeForm.get('AttributeType')?.value;
       if (attrType && id) {
         this.attributeMasterService.loadMaster(attrType, id);
+        this.attributeMasterService.getParentAttributes(attrType, id).subscribe({
+        next: (res: any)=> {
+        if (res.status === 'ok') {
+          this.parentAttributes = res.result;
+        }
+      },
+      error: () => this.attributeMasterService.openErrorDialog('Failed to load parent attributes')
+    });
+
       }
     });
   }
@@ -161,15 +172,6 @@ export class AttributeFormComponent implements OnInit, OnDestroy {
         }
       },
       error: () => this.attributeMasterService.openErrorDialog('Failed to load attribute types')
-    });
-
-    this.attributeMasterService.getParentAttributes().subscribe({
-      next: (res: any)=> {
-      if (res.status === 'ok') {
-        this.parentAttributes = res.result;
-        }
-      },
-      error: () => this.attributeMasterService.openErrorDialog('Failed to load parent attributes')
     });
 
     this.attributeMasterService.getMappedBy().subscribe({
