@@ -4,6 +4,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { ConfigService } from './config.service';
 import { DialogComponent } from './components/dialog/dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { AttributeValueList } from './components/attribute-value-master/Attribute';
 
 export interface AttributeMaster {
   AttributeType: string;
@@ -38,6 +39,12 @@ export interface MappingDetails{
   AttributeListID: number;
 }
 
+export interface AttributeValueMaster {
+  AttributeType: string;
+  ApplyTo: string;
+  AttributeValues: AttributeValueList[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -56,6 +63,12 @@ export class AttributeMasterService {
     MappedFor: '',
     AttributesList: []
   }
+
+  attributeValueMasterObj: AttributeValueMaster = {
+    AttributeType: '',
+    ApplyTo: '',
+    AttributeValues: [],
+  };
 
   private tableDataSubject = new BehaviorSubject<AttributeDetails[]>([]);
   tableData$ = this.tableDataSubject.asObservable();
@@ -164,7 +177,7 @@ loadMaster(attributeType: string, applyTo?: string) {
     this.tableDataSubject.next([]);
   }
 
-  getAttributeNames(attributeType: string, applyTo: string) {
+  getAttributeNames(attributeType: string, applyTo?: string) {
     return this.http.get<any>(`${this.apiUrl}/getListOnlyAttributeNames?attributeType=${attributeType}&applyTo=${applyTo}`);
   }
 
@@ -172,7 +185,7 @@ loadMaster(attributeType: string, applyTo?: string) {
     return this.http.get<any>(`${this.apiUrl}/getParentAttributeInfo?attributeListID=${id}`);
   }
 
-  getAttributeValueList(attributeType: string, applyTo: string){
+  getAttributeValueList(attributeType: string, applyTo?: string){
     return this.http.get<any>(`${this.apiUrl}/getAttributeValues?attributeType=${attributeType}&applyTo=${applyTo}`);
   }
 
@@ -196,4 +209,21 @@ loadMaster(attributeType: string, applyTo?: string) {
       }
     });
   }
+
+  saveAttributeValues(mode: string = 'add') {
+    const body = { 
+      mode: mode,
+      data: this.attributeValueMasterObj 
+    };
+    return this.http.post(`${this.apiUrl}/saveAttributeValues`, body);
+  }
+
+  clearAttributeValues() {
+    this.attributeValueMasterObj = {
+      AttributeType: '',
+      ApplyTo: '',
+      AttributeValues: [],
+    };
+  }
+
 }
