@@ -8,8 +8,8 @@ export interface AttributeValueList{
     AttributeListId: number;
     AttributeName: string;
     AttributeValue: string;
-    AttributeValueId?: number;
+    AttributeValueId?: string;
     ParentAttributeName: string;
     ParentAttributeValueName?: string;
-    ParentAttributeValueId?: number;
+    ParentAttributeValueId?: string;
 }

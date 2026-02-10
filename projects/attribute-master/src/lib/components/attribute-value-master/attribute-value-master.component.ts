@@ -67,6 +67,7 @@ export class AttributeValueMasterComponent implements OnInit,OnDestroy {
           return;
         }
         this.attributeValueForm.get('ApplyTo')?.setValue('');
+        this.attributeNames = [];
         this.resetFormToAddMode();
 
         if(type == 'Transaction'){  
@@ -142,7 +143,7 @@ export class AttributeValueMasterComponent implements OnInit,OnDestroy {
     initForm() {
       this.attributeValueForm = this.fb.group({
         AttributeType: ['', Validators.required],
-        ApplyTo: ['', Validators.required],
+        ApplyTo: [''],
         AttributeName: ['', Validators.required],
         AttributeValue:['', Validators.required],
         ParentAttributeValue:  [''],
@@ -160,59 +161,63 @@ export class AttributeValueMasterComponent implements OnInit,OnDestroy {
       const realIndex = (this.page - 1) * this.itemsPerPage + pageIndex;
       this.editingIndex = realIndex;
       this.isEdit = true;
-      this.attributeValueForm.get('AttributeName')?.disable();
+
       const item = this.attributeValueList[realIndex];
 
       const selectedAttributeName = this.attributeNames.find(
         attr => attr.AttributeListId === item.AttributeListId
       );
-
+      
       if (!selectedAttributeName) return;
       this.attributeValueForm.patchValue({
         AttributeName: selectedAttributeName,
         AttributeValue: item.AttributeValue || '',
         AttributeValueId: item.AttributeValueId,
       });
-      of(item.AttributeListId)
-        .pipe(
-          switchMap((attributeListId) =>
-            this.attributeMasterService.getParentAttributeInfo(attributeListId)
-          ),
-          takeUntil(this.destroy$)
-        )
-        .subscribe((res: any) => {
-          if (res.status !== 'ok') return;
+      of(item.AttributeListId).pipe(switchMap((attributeListId) => this.attributeMasterService.getParentAttributeInfo(attributeListId)),takeUntil(this.destroy$)).subscribe((res: any) => {
+        if (res.status !== 'ok') return;
 
-          this.ParentAttributeInfo = res.result;
+        this.ParentAttributeInfo = res.result;
 
-          const parentControl =
-            this.attributeValueForm.get('ParentAttributeValue');
+        const parentControl = this.attributeValueForm.get('ParentAttributeValue');
 
-          if (this.ParentAttributeInfo.HasParent) {
-            this.hasParent = true;
-            this.parentName = this.ParentAttributeInfo.ParentName;
-            this.parentValueList = this.ParentAttributeInfo.ParentValues;
-            const selectedParentValue = this.parentValueList.find(
-              parent =>
-                parent.AttributeValueId === item.ParentAttributeValueId
-            );
+        if (this.ParentAttributeInfo.HasParent) {
+          this.hasParent = true;
+          this.parentName = this.ParentAttributeInfo.ParentName;
+          this.parentValueList = this.ParentAttributeInfo.ParentValues;
+          const selectedParentValue = this.parentValueList.find(parent => parent.AttributeValueId === item.ParentAttributeValueId);
 
-            parentControl?.setValidators([Validators.required]);
+          parentControl?.setValidators([Validators.required]);
 
-            this.attributeValueForm.patchValue({
-              ParentAttributeValue: selectedParentValue || ''
-            });
-          } else {
-            this.hasParent = false;
-            this.parentName = '';
-            this.parentValueList = [];
+          this.attributeValueForm.patchValue({
+            ParentAttributeValue: selectedParentValue || ''
+          });
+        } 
+        else {
+          this.hasParent = false;
+          this.parentName = '';
+          this.parentValueList = [];
 
-            parentControl?.clearValidators();
-            parentControl?.setValue('');
-          }
+          parentControl?.clearValidators();
+          parentControl?.setValue('');
+        }
+        parentControl?.updateValueAndValidity();
+      });
+      this.disableAttributeName(item)
+    }
 
-          parentControl?.updateValueAndValidity();
-        });
+    disableAttributeName(item:AttributeValueList){
+      const isUsedAsParent = !!item.AttributeValueId && this.attributeValueList.some(
+        x => x.ParentAttributeValueId === item.AttributeValueId
+      );
+
+      const attributeNameControl = this.attributeValueForm.get('AttributeName');
+
+      if (isUsedAsParent) {
+        attributeNameControl?.disable();
+      } else {
+        attributeNameControl?.enable();
+      }
     }
 
 
@@ -238,7 +243,7 @@ export class AttributeValueMasterComponent implements OnInit,OnDestroy {
         AttributeListId: formValue.AttributeName.AttributeListId,
         AttributeName: formValue.AttributeName.attributeName,
         AttributeValue: formValue.AttributeValue,
-        AttributeValueId: formValue.AttributeValueId,
+        AttributeValueId: formValue.AttributeValueId || "",
         ...(this.parentName && { ParentAttributeName: this.parentName }),
         ...(formValue.ParentAttributeValue && {
         ParentAttributeValueName: formValue.ParentAttributeValue.AttributeValue,
