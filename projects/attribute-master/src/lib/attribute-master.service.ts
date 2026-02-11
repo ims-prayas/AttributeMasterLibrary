@@ -96,11 +96,9 @@ export class AttributeMasterService {
     return this.configService.getApiUrl();
   }
 
-  private syncTable() {
+  syncTable() {
     this.tableDataSubject.next([...this.attributeMasterObj.AttributeDetails]);
   }
-
-
 
   deleteAttribute(id: number) {
     this.http
@@ -116,6 +114,7 @@ export class AttributeMasterService {
 
   resetForm() {
     this.resetFormSubject.next();
+    this.tableDataSubject.next([]);
   }
 
   getAttributeTypes() {
@@ -126,8 +125,8 @@ export class AttributeMasterService {
     return this.http.get(`${this.apiUrl}/getApplyToList?attributeType=${attributeTypeID}`);
   }
 
-  getParentAttributes() {
-    return this.http.get(`${this.apiUrl}/getParentAttributes`);
+  getParentAttributes(type:string, applyTo: string) {
+    return this.http.get(`${this.apiUrl}/getParentAttributes?attributeType=${type}&applyTo=${applyTo}`);
   }
 
   getMappedBy() {
@@ -142,20 +141,9 @@ export class AttributeMasterService {
     return this.http.get(`${this.apiUrl}/getAttributesForMapping?attributeType=${attributeType}&applyTo=${applyTo}&mappedFor=${mappedFor}`);
   }
 
-  loadMaster(attributeType: string, applyTo?: string) {
-    return this.getAttributeDetails(attributeType, applyTo).subscribe((res) => {
-      if (res.status === 'ok') {
-        this.attributeMasterObj = {
-          AttributeType: attributeType,
-          ApplyTo: applyTo,
-          IsMappingRequired: res.result.IsMappingRequired,
-          MappedBy: res.result.MappedBy,
-          AttributeDetails: res.result.AttributeDetails || [],
-        };
-        this.syncTable();
-      }
-    });
-  }
+loadMaster(attributeType: string, applyTo?: string) {
+  return this.getAttributeDetails(attributeType, applyTo);
+}
 
   saveMaster() {
     const body = { data: this.attributeMasterObj };
@@ -168,64 +156,8 @@ export class AttributeMasterService {
   }
 
 
-  addOrUpdateRow(row: any, isEdit = false, sn?: number) {
-    this.attributeMasterObj.AttributeType = row.AttributeType;
-    this.attributeMasterObj.ApplyTo = row.ApplyTo;
-    this.attributeMasterObj.IsMappingRequired = row.IsMappingRequired;
-    this.attributeMasterObj.MappedBy = row.MappedBy;
-
-    if (!this.attributeMasterObj.AttributeDetails) {
-      this.attributeMasterObj.AttributeDetails = [];
-    }
-
-    if (row.UseAsBarcode) {
-      const exists = this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (sn === undefined || r.ID !== sn));
-      if (exists) {
-        this.openErrorDialog('Only one element can have barcode')
-        return;
-      }
-    }
-
-
-    const detail: AttributeDetails = {
-      AttributeName: row.AttributeName,
-      DataType: row.DataType,
-      OrderNo: row.OrderNo,
-      Regex: row.Regex,
-      HasParent: row.HasParent,
-      ParentAttribute: row.ParentAttribute,
-      CheckUniqueConstraint: row.CheckUniqueConstraint,
-      ConstraintMode: row.ConstraintMode,
-      IsRequired: row.IsRequired,
-      UseAsBarcode: row.UseAsBarcode,
-    };
-
-    const otherRows = isEdit ? this.attributeMasterObj.AttributeDetails.filter(r => r.ID !== sn) : this.attributeMasterObj.AttributeDetails;
-
-    if (otherRows.some(r => r.AttributeName.toLowerCase() === detail.AttributeName.toLowerCase())) {
-      this.openErrorDialog('Attribute Name already exists.');
-    }
-
-    if (otherRows.some(r => r.OrderNo === detail.OrderNo)) {
-      this.openErrorDialog('Serial Order No already exists.');
-    }
-
-
-    if (isEdit) {
-      const index = this.attributeMasterObj.AttributeDetails.findIndex((r) => r.ID === sn);
-      if (index !== -1) {
-        this.attributeMasterObj.AttributeDetails[index] = { ...detail, ID: sn };
-      } else {
-        this.openErrorDialog('Row not found for update');
-      }
-    } else {
-      this.attributeMasterObj.AttributeDetails.push(detail);
-    }
-    this.tableDataSubject.next([...this.attributeMasterObj.AttributeDetails]);
-  }
-
   clearTable() {
-    this.attributeMasterObj.AttributeDetails = [];
+    // this.attributeMasterObj.AttributeDetails = [];
     this.tableDataSubject.next([]);
   }
 
@@ -241,10 +173,6 @@ export class AttributeMasterService {
     return this.http.get<any>(`${this.apiUrl}/getAttributeValues?attributeType=${attributeType}&applyTo=${applyTo}`);
   }
 
-
-  hasBarcodeAttribute(excludeId?: number): boolean {
-    return this.attributeMasterObj.AttributeDetails.some((r) => r.UseAsBarcode === true && (excludeId === undefined || r.ID !== excludeId));
-  }
 
   openSuccessDialog(Message:string) {
    return this.dialog.open(DialogComponent, {
