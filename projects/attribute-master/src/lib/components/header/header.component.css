@@ -7,7 +7,7 @@
 
 .header-title {
   width: 251px;
-  color: var(--primary-color);
+  color: #336799;
   font-size: 18px;
 }
 
@@ -19,7 +19,7 @@
 }
 
 .button {
-  background-color: var(--primary-color) !important;
+  background-color: #336799 !important;
   color: #fff !important;
   border-radius: 3px;
   padding: 10px;

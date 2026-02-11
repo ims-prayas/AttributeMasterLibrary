@@ -5,16 +5,16 @@
       <div class="col-6 col-md-4">
         <div class="d-flex justify-content-between">
           <label>Attributes Types <span class="text-danger"> * </span></label>
-          <select name="attributetype" class="form-control ml-3" formControlName="AttributeType">
+          <select name="attributetype" class="form-control ml-3" formControlName="AttributeType" (change)="handleAttributeTypeChange($event)">
             <option value="">--Select--</option>
             <option *ngFor="let attribute of attributeTypes" [value]="attribute.AttributeTypeID">{{ attribute.AttributeType }}</option>
           </select>
         </div>
       </div>
-      <div class="col-md-4 col-6 ml-4" *ngIf="attributeForm.get('AttributeType')?.value !== 'Transaction'">
+      <div class="col-md-4 col-6 ml-4">
         <div class="d-flex justify-content-between">
           <label>Apply To <span class="text-danger"> * </span></label>
-          <select name="applyto" class="form-control ml-3" formControlName="ApplyTo">
+          <select name="applyto" class="form-control ml-3" formControlName="ApplyTo" (change)="handleApplyToChange($event)">
             <option value="">--Select--</option>
             <option *ngFor="let data of applyTo" [value]="data.ApplyToID">
               {{ data.ApplyTo }}
@@ -28,7 +28,7 @@
       <div class="col-md-4 col-6">
         <div class="d-flex justify-content-between">
           <label>Mapped For <span class="text-danger"> * </span></label>
-          <select name="mappedfor" class="form-control ml-3" formControlName="MappedFor">
+          <select name="mappedfor" class="form-control ml-4" formControlName="MappedFor" (change)="handleMappedForChange($event)">
             <option value="">--Select--</option>
             <option [value]="item.ID" *ngFor="let item of mappedForList">{{item.MappedFor}}</option>
           </select>

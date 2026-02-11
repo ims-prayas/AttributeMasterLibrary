@@ -142,23 +142,7 @@ export class AttributeMasterService {
   }
 
 loadMaster(attributeType: string, applyTo?: string) {
-  return this.getAttributeDetails(attributeType, applyTo).subscribe({
-    next: (res) => {
-    if (res.status === 'ok') {
-      this.attributeMasterObj = {
-        AttributeType: attributeType,
-        ApplyTo: applyTo,
-        IsMappingRequired: res.result.IsMappingRequired,
-        MappedBy: res.result.MappedBy,
-        AttributeDetails: res.result.AttributeDetails || [],
-      };
-        this.syncTable();
-      }else{
-        this.openErrorDialog('Failed to load table data');
-      }
-    },
-    error: ()=> this.openErrorDialog('Failed to load attribute details')
-  });
+  return this.getAttributeDetails(attributeType, applyTo);
 }
 
   saveMaster() {

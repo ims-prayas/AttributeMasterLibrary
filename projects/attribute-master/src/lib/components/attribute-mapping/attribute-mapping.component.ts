@@ -30,89 +30,10 @@ export class AttributeMappingComponent implements OnInit, OnDestroy {
     this.formInitializer();
     this.loadDropdowns();
 
-this.attributeMasterService.saveRequested$
+    this.attributeMasterService.saveRequested$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.handleMappingSave());
 
-    this.attributeForm.get('AttributeType')?.valueChanges.subscribe((type) => {
-      if(type == 'Transaction'){
-        this.attributeForm.get('ApplyTo')?.setValue(null)
-        this.attributeMasterService.getAttributesForMapping(type).subscribe({
-          next: (res: any)=>{
-            if(res.status == 'ok'){
-              this.attributesList = res.result.length > 0? res.result  : [];
-              this.mappedForList = res.result2.length > 0 ? res.result2 : []
-              this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
-              this.syncData();
-            }
-          },
-          error: ()=> this.attributeMasterService.openErrorDialog('Failed to fetch apply to list')
-        })
-      }
-
-      this.attributeMasterService.getApplyToList(type).subscribe({
-        next: (res: any)=>{
-          if (res.status === 'ok') {
-            this.applyTo = res.result;
-          }  
-        }, 
-        error: ()=> this.attributeMasterService.openErrorDialog('Failed to fetch apply to list')
-      })
-    });
-
-    this.attributeForm.get('ApplyTo')?.valueChanges.subscribe((id) => {
-      const attrType = this.attributeForm.get('AttributeType')?.value;
-      if (attrType && id) {
-      this.attributeMasterService.getAttributesForMapping(attrType, id).subscribe({
-        next: (res: any)=>{
-         if (res.status === 'ok') {
-            this.attributesList = res.result || [];
-            this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
-            this.mappedForList = res.result2.length > 0 ? res.result2 : [];
-            this.syncData(); 
-          } 
-        },
-        error: ()=> this.attributeMasterService.openErrorDialog('Attributes master is not configured')
-      })
-      }
-    });
-
-    this.attributeForm.get('MappedFor')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(mappedFor => {
-        const attrType = this.attributeForm.get('AttributeType')?.value;
-        const applyTo = this.attributeForm.get('ApplyTo')?.value;
-
-        if(attrType == 'Transaction'){
-          this.attributeMasterService.getAttributesForMapping(attrType, applyTo, mappedFor)
-          .subscribe({
-            next: (res: any)=>{
-              if (res.status === 'ok') {
-              this.attributesList = res.result || [];
-              this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
-              this.syncData(); 
-            }
-          },
-            error: ()=> this.attributeMasterService.openErrorDialog('Failed to load mapped attributes')
-          })
-        }
-
-        if (!attrType || !applyTo || !mappedFor) {
-          return;
-        }
-
-      this.attributeMasterService.getAttributesForMapping(attrType, applyTo, mappedFor).subscribe({
-        next: (res: any)=>{
-         if (res.status === 'ok') {
-            this.attributesList = res.result || [];
-            this.mappedAttributesList =
-            this.attributesList.filter((item: any) => item.IsMapped);
-            this.syncData(); 
-          } 
-        },
-        error: ()=> this.attributeMasterService.openErrorDialog('Falied to load mappings')
-      })
-    });
 
     
     this.attributeMasterService.resetForm$
@@ -142,6 +63,7 @@ this.attributeMasterService.saveRequested$
      next: (res: any)  =>{
       if(res.status == 'ok'){
         this.attributeTypes = res.result
+        this.attributeTypes = this.attributeTypes.filter(item => item.AttributeTypeID != 'Document')
       }else{
         this.attributeMasterService.openErrorDialog(res.result)
       }
@@ -246,7 +168,89 @@ this.attributeMasterService.saveRequested$
           this.attributeMasterService.openErrorDialog(res.message || 'Mapping failed');
         }
       },
-      error: () => this.attributeMasterService.openSuccessDialog('Network error while saving Mapping')
+      error: () => this.attributeMasterService.openSuccessDialog('Failed to save mapping')
     });
+  }
+
+  handleAttributeTypeChange(event: Event){
+    const type = (event.target as HTMLInputElement).value
+    if(!type){
+      return;
+    }
+    this.resetOnAttributeTypeChange();
+
+    if(type == 'Transaction'){
+      this.attributeForm.get('ApplyTo')?.setValue(null);
+      this.attributeForm.get('ApplyTo')?.disable();
+      this.attributeMasterService.getAttributesForMapping(type).subscribe({
+        next: (res: any)=>{
+          if(res.status == 'ok'){
+            this.attributesList = res.result.length > 0? res.result  : [];
+            this.mappedForList = res.result2.length > 0 ? res.result2 : []
+            this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
+            this.syncData();
+          }
+        },
+        error: ()=> this.attributeMasterService.openErrorDialog('Failed to fetch apply to list')
+      })
+    }else{
+      this.attributeForm.get('ApplyTo')?.enable();
+    }
+
+    this.attributeMasterService.getApplyToList(type).subscribe({
+      next: (res: any)=>{
+        if (res.status === 'ok') {
+          this.applyTo = res.result;
+        }  
+      }, 
+      error: ()=> this.attributeMasterService.openErrorDialog('Failed to fetch apply to list')
+    })
+  }
+
+  handleApplyToChange(event: Event){
+    const applyTo = (event.target as HTMLInputElement).value
+    const attrType = this.attributeForm.get('AttributeType')?.value
+    if(attrType && applyTo){
+      this.attributeMasterService.getAttributesForMapping(attrType, applyTo).subscribe({
+        next: (res: any)=>{
+         if (res.status === 'ok') {
+          this.attributesList = res.result || [];
+          this.mappedAttributesList = this.attributesList.filter((item: any) => item.IsMapped);
+          this.mappedForList = res.result2.length > 0 ? res.result2 : [];
+          this.syncData(); 
+          } 
+        },
+        error: ()=> this.attributeMasterService.openErrorDialog('Attributes master is not configured')
+      })
+    }
+  }
+
+   handleMappedForChange(event: Event){
+    const mappedFor = (event.target as HTMLInputElement).value
+    const attrType = this.attributeForm.get('AttributeType')?.value
+    const applyTo = this.attributeForm.get('ApplyTo')?.value
+
+    if (!attrType || !applyTo || !mappedFor) {
+      return;
+    }
+
+    this.attributeMasterService.getAttributesForMapping(attrType, applyTo, mappedFor).subscribe({
+      next: (res: any)=>{
+        if (res.status === 'ok') {
+          this.attributesList = res.result || [];
+          this.mappedAttributesList =
+          this.attributesList.filter((item: any) => item.IsMapped);
+          this.syncData(); 
+        } 
+      },
+      error: ()=> this.attributeMasterService.openErrorDialog('Falied to load mappings')
+    })
+   }
+
+  resetOnAttributeTypeChange(){
+    this.attributeForm.get('MappedFor')?.setValue(null);
+    this.attributeForm.get('ApplyTo')?.setValue(null);
+    this.attributesList = []
+    this.mappedAttributesList = []
   }
 }
