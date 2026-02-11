@@ -33,7 +33,7 @@ import { AttributeValueMasterComponent } from './components/attribute-value-mast
     NgxPaginationModule,
     MatDialogModule
   ],
-  exports: [AttributeMasterComponent, AttributeMasterLibraryRoutingModule],
+  exports: [AttributeMasterComponent, AttributeMasterLibraryRoutingModule, AttributeFormComponent, AttributeMappingComponent, AttributeValueMasterComponent],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
   ],
